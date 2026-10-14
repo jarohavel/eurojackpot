@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eurojackpot Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-100 via-indigo-50/40 to-slate-100 text-slate-800 antialiased min-h-screen pb-16">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+        
+        <!-- Hlavička -->
+        <header class="relative overflow-hidden bg-gradient-to-r from-indigo-950 via-indigo-900 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-indigo-950/10 mb-8 border border-indigo-800/50 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-6">
+            <div class="relative z-10">
+                <span class="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-full border border-emerald-500/30 mb-2">Syndicate Hub (Cloud Active 🌐)</span>
+                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2">🍀 Eurojackpot Tracker</h1>
+                <p class="text-indigo-200/80 text-xs sm:text-sm mt-1">Odvážnemu šťastie praje (Vergilius)</p>
+            </div>
+            
+            <div class="relative z-10 flex flex-wrap sm:flex-nowrap gap-3 items-center">
+                <div class="flex-1 sm:flex-none bg-indigo-900/60 backdrop-blur-md px-5 py-3 rounded-2xl border border-indigo-700/50 shadow-inner text-right">
+                    <p class="text-[11px] font-medium text-indigo-300 uppercase tracking-wider">Budget</p>
+                    <p id="header-budget" class="text-xl sm:text-2xl font-black text-emerald-400">40,20 €</p>
+                </div>
+                <div class="flex-1 sm:flex-none bg-indigo-900/60 backdrop-blur-md px-5 py-3 rounded-2xl border border-indigo-700/50 shadow-inner text-right">
+                    <p class="text-[11px] font-medium text-indigo-300 uppercase tracking-wider">Ref. vklad / osoba</p>
+                    <p id="header-ref" class="text-xl sm:text-2xl font-black text-white">290,00 €</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Hlavný obsah -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- 👥 Aktuálne Saldo -->
+            <div class="lg:col-span-1">
+                <div class="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-md shadow-indigo-950/5 border border-slate-200/80">
+                    <div class="flex justify-between items-center mb-5">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800">👥 Aktuálne Saldo & Čísla</h2>
+                            <p class="text-xs text-slate-400">Stav voči ref. vkladu (od r. 2024)</p>
+                        </div>
+                        <button onclick="promptAddReconciliation()" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-2 rounded-xl transition shadow-sm cursor-pointer flex items-center gap-1">
+                            <span>➕ Rekonciliácia</span>
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                    <th class="pb-3">Meno & Čísla tiketu</th>
+                                    <th class="pb-3 text-right">Účet</th>
+                                    <th class="pb-3 text-right">Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="players-table-body" class="divide-y divide-slate-50">
+                                <!-- JS naplni -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-5 pt-4 border-t border-slate-100 text-[11px] text-slate-400 flex items-center gap-2">
+                        <span class="text-indigo-500 font-bold">💡</span>
+                        <span>Preplatok (+) je kredit naviac, nedoplatok (-) treba doplatiť.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🎟️ Žrebovania a 📊 Rekonciliácie -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- Žrebovania -->
+                <div class="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-md shadow-indigo-950/5 border border-slate-200/80">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800">🎟️ História žrebovaní a tikety</h2>
+                            <p class="text-xs text-slate-400" id="draw-count-info">Celkovo žrebovaní: 0</p>
+                        </div>
+                        <button onclick="openAddDrawModal()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2.5 px-4 rounded-xl transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5">
+                            <span>➕ Pridať žrebovanie</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1" id="draws-list">
+                        <!-- JS naplni -->
+                    </div>
+                </div>
+
+                <!-- História rekonciliácií -->
+                <div class="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-md shadow-indigo-950/5 border border-slate-200/80">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800">📊 História rekonciliácií platieb (2024 - 2026)</h2>
+                            <p class="text-xs text-slate-400">Prehľad kumulatívnych stavov účtov v čase</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
+                            <span class="text-xs font-medium text-slate-500 pl-2">Rok:</span>
+                            <select id="reconciliation-year-select" onchange="render()" class="border-0 rounded-lg px-2.5 py-1 text-xs bg-white font-bold text-indigo-700 shadow-xs outline-hidden cursor-pointer">
+                                <!-- JS naplni -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse" id="reconciliation-table">
+                            <!-- JS naplni -->
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Admin sekcia -->
+                <div class="bg-slate-200/50 backdrop-blur-sm p-6 rounded-3xl border border-slate-300/60 space-y-3">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs">⚙️</span>
+                        <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider">Správa pre Admina (Cloud & Zálohy)</h3>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium py-2.5 px-3 rounded-xl transition cursor-pointer shadow-xs">💾 Exportovať zálohu</button>
+                        <label class="bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium py-2.5 px-3 rounded-xl border border-slate-300/80 transition cursor-pointer text-center block shadow-xs">
+                            📂 Importovať zálohu <input type="file" onchange="importData(event)" class="hidden">
+                        </label>
+                        <button onclick="syncWithCloudManual()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 text-xs font-medium py-2.5 px-3 rounded-xl transition cursor-pointer">🔄 Synchronizovať cloud</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modálne okno -->
+    <div id="draw-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto border border-slate-100">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800">Pridať nové žrebovanie</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-sm font-bold p-1">✕</button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Dátum žrebovania:</label>
+                    <input type="date" id="modal-date" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Vklad (€):</label>
+                        <input type="number" id="modal-vklad" value="14.00" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Výhra (€):</label>
+                        <input type="number" id="modal-vyhra" value="0.00" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Komentár:</label>
+                    <input type="text" id="modal-koment" class="w-full border border-slate-200 rounded-xl p-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200" placeholder="Voliteľný komentár">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Screenshot tiketu z mobilu (uloží sa do cloudu):</label>
+                    <input type="file" id="modal-image" accept="image/*" capture="environment" class="w-full border border-slate-200 rounded-xl p-2 text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button onclick="closeModal()" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-xl cursor-pointer">Zrušiť</button>
+                <button onclick="saveDraw()" class="px-5 py-2.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md shadow-indigo-600/20 cursor-pointer">Uložiť žrebovanie</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            jsonbinKey: "$2a$10$jL7wMsp2LFfUy42jctpqjubPKFBp0DjM6HIncPPBtvpwqF1jjW/kq", 
+            binId: "6acf9373ac6210605a310505",
+            imgbbKey: "5f13857d52e46274f7854edb78bf3ac1"
+        };
+
+        const defaultData = {
+            players: ["Jaro", "Jošti", "Danka", "Peťa", "Mišo", "Zuzka", "Rasťo"],
+            playerNumbers: {
+                "Jaro": "7, 19, 35, 40, 49 (5, 8)",
+                "Jošti": "7, 12, 17, 26, 27 (1, 7)",
+                "Danka": "4, 7, 14, 25, 30 (4, 7)",
+                "Peťa": "5, 7, 12, 24, 32 (1, 3)",
+                "Mišo": "3, 6, 9, 12, 15 (3, 9)",
+                "Zuzka": "6, 22, 28, 33, 42 (4, 9)",
+                "Rasťo": "4, 12, 17, 30, 38 (2, 4)"
+            },
+            baseCredit: 394.0,
+            // Individuálny počiatočný referenčný vklad pre členov (Rasťo začal neskôr, preto má nižší počiatočný ref. vklad)
+            initialRefDeposits: {
+                "Jaro": 290.0,
+                "Jošti": 290.0,
+                "Danka": 290.0,
+                "Peťa": 290.0,
+                "Mišo": 290.0,
+                "Zuzka": 290.0,
+                "Rasťo": 206.0 
+            },
+            reconciliations: [
+                { date: "05.02.2024", balances: { "Jaro": 404, "Jošti": 390, "Danka": 390, "Peťa": 428, "Mišo": 404, "Zuzka": 404, "Rasťo": 312 } },
+                { date: "31.05.2024", balances: { "Jaro": 438, "Jošti": 450, "Danka": 390, "Peťa": 458, "Mišo": 438, "Zuzka": 438, "Rasťo": 352 } },
+                { date: "22.11.2024", balances: { "Jaro": 488, "Jošti": 450, "Danka": 480, "Peťa": 458, "Mišo": 488, "Zuzka": 488, "Rasťo": 352 } },
+                { date: "28.11.2024", balances: { "Jaro": 488, "Jošti": 518, "Danka": 480, "Peťa": 488, "Mišo": 488, "Zuzka": 488, "Rasťo": 422 } },
+                { date: "14.02.2025", balances: { "Jaro": 512, "Jošti": 518, "Danka": 520, "Peťa": 540, "Mišo": 512, "Zuzka": 512, "Rasťo": 422 } },
+                { date: "09.05.2025", balances: { "Jaro": 536, "Jošti": 518, "Danka": 520, "Peťa": 570, "Mišo": 536, "Zuzka": 536, "Rasťo": 472 } },
+                { date: "23.09.2025", balances: { "Jaro": 576, "Jošti": 558, "Danka": 580, "Peťa": 570, "Mišo": 576, "Zuzka": 576, "Rasťo": 522 } },
+                { date: "05.12.2025", balances: { "Jaro": 596, "Jošti": 558, "Danka": 600, "Peťa": 570, "Mišo": 596, "Zuzka": 596, "Rasťo": 522 } },
+                { date: "04.08.2026", balances: { "Jaro": 664, "Jošti": 596, "Danka": 620, "Peťa": 630, "Mišo": 664, "Zuzka": 666, "Rasťo": 572 } },
+                { date: "09.10.2026", balances: { "Jaro": 684, "Jošti": 664, "Danka": 670, "Peťa": 700, "Mišo": 684, "Zuzka": 684, "Rasťo": 572 } }
+            ],
+            draws: [
+                { date: "2026-10-09", vklad: 14.0, vyhra: 24.50, koment: "130EUR pouzite z banku, EJ bol 120M", image: null },
+                { date: "2026-10-02", vklad: 14.0, vyhra: 18.80, koment: "", image: null },
+                { date: "2026-09-25", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-09-18", vklad: 14.0, vyhra: 20.10, koment: "", image: null },
+                { date: "2026-09-11", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-09-04", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-08-28", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-08-21", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-08-14", vklad: 14.0, vyhra: 9.80, koment: "", image: null },
+                { date: "2026-08-07", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-07-31", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-07-24", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-07-17", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-07-10", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-07-03", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-06-26", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-06-19", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-06-12", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-06-05", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-05-29", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-05-22", vklad: 14.0, vyhra: 10.30, koment: "", image: null },
+                { date: "2026-05-15", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-05-08", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-05-01", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-04-24", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-04-17", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-04-10", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-04-03", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-03-27", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-03-20", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-03-13", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-03-06", vklad: 14.0, vyhra: 10.20, koment: "", image: null },
+                { date: "2026-02-27", vklad: 14.0, vyhra: 8.10, koment: "", image: null },
+                { date: "2026-02-20", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-02-13", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-02-06", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-01-30", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-01-23", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-01-16", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-01-09", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2026-01-02", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-12-26", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-12-19", vklad: 14.0, vyhra: 9.40, koment: "", image: null },
+                { date: "2025-12-12", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-12-05", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-11-28", vklad: 14.0, vyhra: 10.20, koment: "", image: null },
+                { date: "2025-11-21", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-11-14", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-11-07", vklad: 14.0, vyhra: 17.00, koment: "", image: null },
+                { date: "2025-10-31", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-10-24", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-10-17", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-10-10", vklad: 14.0, vyhra: 10.80, koment: "", image: null },
+                { date: "2025-10-03", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-09-26", vklad: 14.0, vyhra: 20.00, koment: "23.9. utorok boj o EJ +30EUR, extra tikety", image: null },
+                { date: "2025-09-19", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-09-12", vklad: 14.0, vyhra: 10.00, koment: "", image: null },
+                { date: "2025-09-05", vklad: 14.0, vyhra: 10.50, koment: "", image: null },
+                { date: "2025-08-29", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-08-22", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-08-15", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-08-08", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-08-01", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-07-25", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-07-18", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-07-11", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-07-04", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-06-27", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-06-20", vklad: 14.0, vyhra: 9.10, koment: "", image: null },
+                { date: "2025-06-13", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-06-06", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-05-30", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-05-23", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-05-16", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-05-09", vklad: 14.0, vyhra: 0.0, koment: "boj o EJ +72EUR, extra tikety", image: null },
+                { date: "2025-05-02", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-04-25", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-04-18", vklad: 14.0, vyhra: 9.20, koment: "", image: null },
+                { date: "2025-04-11", vklad: 14.0, vyhra: 10.80, koment: "", image: null },
+                { date: "2025-04-04", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-03-28", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-03-21", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-03-14", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-03-07", vklad: 14.0, vyhra: 28.40, koment: "", image: null },
+                { date: "2025-02-28", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-02-21", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-02-14", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-02-07", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-01-31", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-01-24", vklad: 14.0, vyhra: 9.70, koment: "", image: null },
+                { date: "2025-01-17", vklad: 14.0, vyhra: 7.70, koment: "", image: null },
+                { date: "2025-01-10", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2025-01-03", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-12-27", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-12-20", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-12-13", vklad: 14.0, vyhra: 9.70, koment: "", image: null },
+                { date: "2024-12-06", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-11-29", vklad: 14.0, vyhra: 10.50, koment: "boj o EJ +92EUR, extra tikety", image: null },
+                { date: "2024-11-22", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-11-15", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-11-08", vklad: 14.0, vyhra: 10.90, koment: "", image: null },
+                { date: "2024-11-01", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-10-25", vklad: 14.0, vyhra: 10.50, koment: "", image: null },
+                { date: "2024-10-18", vklad: 14.0, vyhra: 10.00, koment: "", image: null },
+                { date: "2024-10-11", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-10-04", vklad: 14.0, vyhra: 8.90, koment: "", image: null },
+                { date: "2024-09-27", vklad: 14.0, vyhra: 10.00, koment: "", image: null },
+                { date: "2024-09-20", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-09-13", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-09-06", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-08-30", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-08-23", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-08-16", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-08-09", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-08-02", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-07-26", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-07-19", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-07-12", vklad: 14.0, vyhra: 9.30, koment: "", image: null },
+                { date: "2024-07-05", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-06-28", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-06-21", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-06-14", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-06-07", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-05-31", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-05-24", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-05-17", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-05-10", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-05-03", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-04-26", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-04-19", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-04-12", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-04-05", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-03-29", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-03-22", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-03-15", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-03-08", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-03-01", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-02-23", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-02-16", vklad: 14.0, vyhra: 9.10, koment: "", image: null },
+                { date: "2024-02-09", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-02-02", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-01-26", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-01-19", vklad: 14.0, vyhra: 0.0, koment: "", image: null },
+                { date: "2024-01-12", vklad: 14.0, vyhra: 10.30, koment: "", image: null },
+                { date: "2024-01-05", vklad: 14.0, vyhra: 37.40, koment: "boj o EJ, extra tikety", image: null }
+            ],
+            extraBudget: 40.20
+        };
+
+        let appData = defaultData;
+
+        async function loadFromCloud() {
+            if (!CONFIG.jsonbinKey || CONFIG.jsonbinKey.startsWith("SEM")) {
+                appData = JSON.parse(localStorage.getItem('eurojackpot_data_v7')) || defaultData;
+                // Ak v uložených dátach chýba initialRefDeposits, doplníme pre istotu
+                if (!appData.initialRefDeposits) appData.initialRefDeposits = defaultData.initialRefDeposits;
+                render();
+                return;
+            }
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.binId}/latest`, {
+                    headers: { 'X-Master-Key': CONFIG.jsonbinKey }
+                });
+                if (response.ok) {
+                    const json = await response.json();
+                    if (json.record && json.record.players) {
+                        appData = json.record;
+                        if (!appData.initialRefDeposits) appData.initialRefDeposits = defaultData.initialRefDeposits;
+                    }
+                }
+            } catch (e) {
+                console.error("Chyba načítania z cloudu, použijem lokálne dáta", e);
+                appData = JSON.parse(localStorage.getItem('eurojackpot_data_v7')) || defaultData;
+                if (!appData.initialRefDeposits) appData.initialRefDeposits = defaultData.initialRefDeposits;
+            }
+            render();
+        }
+
+        async function saveToCloud() {
+            localStorage.setItem('eurojackpot_data_v7', JSON.stringify(appData));
+            if (!CONFIG.jsonbinKey || CONFIG.jsonbinKey.startsWith("SEM")) return;
+
+            try {
+                await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.binId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': CONFIG.jsonbinKey
+                    },
+                    body: JSON.stringify(appData)
+                });
+            } catch (e) {
+                console.error("Chyba pri ukladaní do cloudu", e);
+            }
+        }
+
+        async function uploadToImgBB(file) {
+            if (!CONFIG.imgbbKey || CONFIG.imgbbKey.startsWith("SEM")) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            const formData = new FormData();
+            formData.append("image", file);
+
+            try {
+                const res = await fetch(`https://api.imgbb.com/1/upload?key=${CONFIG.imgbbKey}`, {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    return data.data.url;
+                }
+            } catch (e) {
+                console.error("Chyba pri nahrávaní obrázka na ImgBB", e);
+            }
+            return null;
+        }
+
+        function render() {
+            const countDraws = appData.draws.length;
+            // Spočítame nové žrebovania pridané od začiatku sledovania (vychádzame z toho, že defaultData má 145 základných žrebovaní)
+            const baseDrawsCount = 145;
+            const newDrawsCount = Math.max(0, countDraws - baseDrawsCount);
+
+            document.getElementById('header-ref').innerText = (290.00 + (newDrawsCount * 2.0)).toFixed(2) + ' €';
+            document.getElementById('draw-count-info').innerText = `Celkovo žrebovaní: ${countDraws} (po 2€ / žrebovanie)`;
+            document.getElementById('header-budget').innerText = appData.extraBudget.toFixed(2) + ' €';
+
+            const lastRec = appData.reconciliations[appData.reconciliations.length - 1] || { balances: {} };
+
+            // Render hráčov s individuálnym výpočtom salda
+            const tbody = document.getElementById('players-table-body');
+            tbody.innerHTML = '';
+            
+            appData.players.forEach(name => {
+                const currentBalance = lastRec.balances[name] !== undefined ? lastRec.balances[name] : 0;
+                const creditSince2024 = currentBalance - (appData.baseCredit || 394);
+                
+                // Zistíme počiatočný ref vklad pre daného hráča (Rasťo má iný) + pripočítame nové žrebowania (2€ za každé nové)
+                const initialRef = (appData.initialRefDeposits && appData.initialRefDeposits[name] !== undefined) 
+                    ? appData.initialRefDeposits[name] 
+                    : 290.0;
+                const personalRef = initialRef + (newDrawsCount * 2.0);
+
+                const saldo = creditSince2024 - personalRef;
+                
+                let saldoBg = 'bg-slate-100 text-slate-600';
+                if (saldo < -0.01) saldoBg = 'bg-rose-50 text-rose-700 font-bold border border-rose-200/60';
+                if (saldo > 0.01) saldoBg = 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-200/60';
+                if (Math.abs(saldo) <= 0.01) saldoBg = 'bg-slate-100 text-slate-800 font-bold border border-slate-200';
+
+                const numbers = appData.playerNumbers[name] || '';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-indigo-50/30 transition-colors">
+                        <td class="py-3">
+                            <div class="font-bold text-slate-800">${name}</div>
+                            <div class="text-[10px] text-indigo-600/80 font-mono font-medium">${numbers}</div>
+                        </td>
+                        <td class="py-3 text-right font-mono text-xs font-medium text-slate-600">${currentBalance.toFixed(2)} €</td>
+                        <td class="py-3 text-right">
+                            <span class="px-2.5 py-1 rounded-lg text-xs ${saldoBg}">${saldo > 0.01 ? '+' : ''}${saldo.toFixed(2)} €</span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Render žrebovaní
+            const drawsContainer = document.getElementById('draws-list');
+            drawsContainer.innerHTML = '';
+            appData.draws.forEach((d, idx) => {
+                const parts = d.date.split('-');
+                const displayDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : d.date;
+
+                drawsContainer.innerHTML += `
+                    <div class="p-4 rounded-2xl border border-slate-200/70 bg-white/60 hover:bg-white transition-all shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-800 text-sm">📅 ${displayDate}</span>
+                                <span class="bg-indigo-50 text-indigo-700 border border-indigo-100 text-xs px-2.5 py-0.5 rounded-lg font-bold">Vklad: ${d.vklad.toFixed(2)} €</span>
+                            </div>
+                            <p class="text-xs text-slate-500">${d.koment || 'Bez komentára'}</p>
+                            ${d.image ? `<a href="${d.image}" target="_blank" class="inline-flex items-center gap-1 mt-1 text-xs text-indigo-600 hover:text-indigo-800 font-semibold bg-indigo-50/50 px-2 py-1 rounded-md border border-indigo-100/50">📎 Zobraziť screenshot tiketu</a>` : ''}
+                        </div>
+                        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-2 md:pt-0 border-slate-100">
+                            <div class="text-right">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Výhra</p>
+                                <p class="text-sm font-black ${d.vyhra > 0 ? 'text-emerald-600' : 'text-slate-500'}">${d.vyhra.toFixed(2)} €</p>
+                            </div>
+                            <button onclick="deleteDraw(${idx})" class="text-slate-300 hover:text-rose-600 p-1.5 transition text-xs cursor-pointer" title="Zmazať">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Rekonciliácie
+            let years = setYearsInSelect();
+            let selectedYear = document.getElementById('reconciliation-year-select').value || years[years.length - 1];
+
+            const filteredRecs = appData.reconciliations.filter(r => {
+                const parts = r.date.split('.');
+                const rYear = parts.length === 3 ? parts[2] : '2026';
+                return rYear === selectedYear;
+            });
+
+            const recTable = document.getElementById('reconciliation-table');
+            let headerHtml = `<tr class="border-b border-slate-200/80 text-slate-400 bg-slate-50/80"><th class="p-2.5 font-semibold">Kolega / Dátum</th>`;
+            filteredRecs.forEach(r => {
+                headerHtml += `<th class="p-2.5 text-right font-semibold">${r.date}</th>`;
+            });
+            headerHtml += `</tr>`;
+
+            let bodyHtml = ``;
+            appData.players.forEach(name => {
+                bodyHtml += `<tr class="border-b border-slate-100 hover:bg-indigo-50/20 transition-colors"><td class="p-2.5 font-semibold text-slate-700">${name}</td>`;
+                filteredRecs.forEach(r => {
+                    const val = r.balances[name] !== undefined ? r.balances[name] : '-';
+                    bodyHtml += `<td class="p-2.5 text-right font-mono text-slate-600">${typeof val === 'number' ? val.toFixed(2) + ' €' : val}</td>`;
+                });
+                bodyHtml += `</tr>`;
+            });
+            recTable.innerHTML = headerHtml + bodyHtml;
+        }
+
+        function setYearsInSelect() {
+            let yearsSet = new Set();
+            appData.reconciliations.forEach(r => {
+                const parts = r.date.split('.');
+                if (parts.length === 3) yearsSet.add(parts[2]);
+            });
+            let years = Array.from(yearsSet).sort();
+            if (years.length === 0) years.push(new Date().getFullYear().toString());
+
+            const select = document.getElementById('reconciliation-year-select');
+            const currentVal = select.value;
+            select.innerHTML = '';
+            years.forEach(y => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.innerText = y;
+                select.appendChild(opt);
+            });
+            if (years.includes(currentVal)) {
+                select.value = currentVal;
+            }
+            return years;
+        }
+
+        function openAddDrawModal() {
+            document.getElementById('draw-modal').classList.remove('hidden');
+            document.getElementById('modal-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeModal() {
+            document.getElementById('draw-modal').classList.add('hidden');
+        }
+
+        async function saveDraw() {
+            const date = document.getElementById('modal-date').value;
+            const vklad = parseFloat(document.getElementById('modal-vklad').value) || 14;
+            const vyhra = parseFloat(document.getElementById('modal-vyhra').value) || 0;
+            const koment = document.getElementById('modal-koment').value;
+            const imageInput = document.getElementById('modal-image');
+
+            if (!date) { alert('Vyber dátum!'); return; }
+
+            let imgUrl = null;
+            if (imageInput.files && imageInput.files[0]) {
+                imgUrl = await uploadToImgBB(imageInput.files[0]);
+            }
+
+            appData.draws.unshift({ date, vklad, vyhra, koment, image: imgUrl });
+            if (vyhra > 0) appData.extraBudget += vyhra;
+            
+            await saveToCloud();
+            render();
+            closeModal();
+        }
+
+        async function deleteDraw(idx) {
+            if (confirm('Naozaj zmazať toto žrebovanie?')) {
+                appData.draws.splice(idx, 1);
+                await saveToCloud();
+                render();
+            }
+        }
+
+        async function promptAddReconciliation() {
+            const dateStr = prompt("Zadaj dátum rekonciliácie (napr. 15.11.2026):", new Date().toLocaleDateString('sk-SK'));
+            if (!dateStr) return;
+
+            let newBalances = {};
+            const lastRec = appData.reconciliations[appData.reconciliations.length - 1] || { balances: {} };
+
+            appData.players.forEach(name => {
+                const prevVal = lastRec.balances[name] || 0;
+                const inputVal = prompt(`Zadaj celkový stav na účte od kolegu [${name}] k dátumu ${dateStr}:`, prevVal);
+                newBalances[name] = parseFloat(inputVal) || prevVal;
+            });
+
+            appData.reconciliations.push({ date: dateStr, balances: newBalances });
+            await saveToCloud();
+            render();
+            alert('Nová rekonciliácia bola úspešne pridaná do cloudu!');
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "eurojackpot_archiv_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        async function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    appData = JSON.parse(e.target.result);
+                    if (!appData.initialRefDeposits) appData.initialRefDeposits = defaultData.initialRefDeposits;
+                    await saveToCloud();
+                    render();
+                    alert('Dáta úspešne načítané a uložene do cloudu!');
+                } catch (err) {
+                    alert('Chyba pri čítaní súboru!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function syncWithCloudManual() {
+            await loadFromCloud();
+            alert("Dáta boli úspešne zosynchronizované s cloudom!");
+        }
+
+        loadFromCloud();
+    </script>
+</body>
+</html>
