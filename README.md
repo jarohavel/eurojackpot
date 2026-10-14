@@ -1,2 +1,0 @@
-# eurojackpot
-Eurojackpot tracking page
